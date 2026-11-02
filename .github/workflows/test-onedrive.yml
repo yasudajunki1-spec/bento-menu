@@ -1,0 +1,49 @@
+```yaml
+
+name: Test OneDrive Access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Test OneDrive folder URL
+        env:
+          FOLDER_URL: ${{ secrets.ONEDRIVE_FOLDER_URL }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import urllib.request
+
+          url = os.environ["FOLDER_URL"]
+
+          req = urllib.request.Request(
+              url,
+              headers={"User-Agent": "Mozilla/5.0"}
+          )
+
+          try:
+              with urllib.request.urlopen(
+                  req, timeout=30
+              ) as response:
+                  content = response.read()
+                  print("HTTP status:", response.status)
+                  print("Content type:",
+                        response.headers.get("Content-Type"))
+                  print("Response size:", len(content))
+                  print("Final host:", response.url.split("/")[2])
+
+                  if content.startswith(b"%PDF"):
+                      print("PDF content detected")
+                  elif b"<html" in content[:1000].lower():
+                      print("HTML page detected")
+                  else:
+                      print("Other content detected")
+          except Exception as e:
+              print("Request failed:", type(e).__name__)
+              raise
+          PY
+```
